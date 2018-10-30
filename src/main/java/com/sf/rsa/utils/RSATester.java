@@ -1,4 +1,4 @@
-package com.sf.rsa.rsa;
+package com.sf.rsa.utils;
 
 import java.util.Map;
 

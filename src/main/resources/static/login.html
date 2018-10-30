@@ -1,0 +1,39 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Insert title here</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jsencrypt/3.0.0-rc.1/jsencrypt.js"></script>
+</head>
+<body>
+
+<script type="text/javascript">
+    $(function() {
+        $("#bt").click(
+            function() {
+                // 获取公钥
+                $.post("/getKey", {}, function(result) {
+                    if(result != null) {
+                        var encrypt = new JSEncrypt();
+                        encrypt.setPublicKey(result);
+                        var password = $("#password").val();
+                        var uname = $("#uname").val();
+                        // 使用公钥加密密码
+                        password = encrypt.encrypt(password);
+                        $.post("/login", {username:uname,password:password}, function(data) {
+                            alert(data);
+                        });
+                    }
+                });
+            });
+    });
+</script>
+
+<form>
+    用户名：<input type="text" name="uname" id="uname" />
+    密码：<input type="text" name="password" id="password" />
+        <input type="button" id="bt" value="登录" />
+</form>
+
+</body>
+</html>

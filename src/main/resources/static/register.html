@@ -11,24 +11,20 @@
     $(function() {
         $("#bt").click(
             function() {
+                // 获取公钥
                 $.post("/getKey", {}, function(result) {
-                    console.log(result);
                     if(result != null) {
                         var encrypt = new JSEncrypt();
                         encrypt.setPublicKey(result);
-                        // encrypt.setPrivateKey($("#privatekey").val());
                         var password = $("#password").val();
                         var uname = $("#uname").val();
+                        // 使用公钥加密密码
                         password = encrypt.encrypt(password);
-                        console.log("password"+password);
-                        $.post("/login", {username:uname,password:password}, function(result1) {
-                            console.log(result1)
-
+                        $.post("/register", {username:uname,password:password}, function(data) {
+                            alert(data);
                         });
                     }
-
                 });
-
             });
     });
 </script>
@@ -36,7 +32,7 @@
 <form>
     用户名：<input type="text" name="uname" id="uname" />
     密码：<input type="text" name="password" id="password" />
-        <input type="button" id="bt" value="提交" />
+        <input type="button" id="bt" value="注册" />
 </form>
 
 </body>

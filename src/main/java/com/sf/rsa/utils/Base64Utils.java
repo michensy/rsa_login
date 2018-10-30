@@ -1,4 +1,4 @@
-package com.sf.rsa.rsa;
+package com.sf.rsa.utils;
 
 import com.sun.org.apache.xml.internal.security.utils.Base64;
 
