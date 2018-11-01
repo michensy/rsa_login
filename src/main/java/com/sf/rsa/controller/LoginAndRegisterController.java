@@ -1,8 +1,8 @@
 package com.sf.rsa.controller;
 
+import com.sf.rsa.common.Utils.PasswordEncoder;
 import com.sf.rsa.dao.UserRepository;
 import com.sf.rsa.entity.User;
-import com.sf.rsa.utils.Base64Utils;
 import com.sf.rsa.utils.RSAUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -67,25 +67,38 @@ public class LoginAndRegisterController {
     @ResponseBody
     @RequestMapping("/login")
     public String login(@NotBlank String username, @NotBlank String password, HttpSession session){
-        // 解决参数中的 +符号被过滤掉
-        try {
-            byte[] decode = Base64Utils.decode(password);
-            password = new String(decode, "UTF-8");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // 如果是 get的方式提交，需要使用 base64加密，用于解决参数中的 +符号被过滤掉
+        // try {
+        //     byte[] decode = Base64Utils.decode(password);
+        //     password = new String(decode, "UTF-8");
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
         String privateKey = (String) session.getAttribute("privateKey");
         if (StringUtils.isEmpty(privateKey)) {
             return "登录失败 session失效";
         }
         // 根据 session中的私钥解密为原密码
         String passwordIn = RSAUtils.decryptDataOnJava(password, privateKey);
+
         // 从数据库中获取密码进行校验
-        String passwordDb = userRepository.findByUsername(username).getPassword();
-        String decryPasswordDb = RSAUtils.decryptDataOnJava(passwordDb, PRIVATEKEY);
-        if (!passwordIn.equals(decryPasswordDb)) {
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            return "用户不存在";
+        }
+        String passwordDb = user.getPassword();
+
+        // rsa方案
+        // String decryPasswordDb = RSAUtils.decryptDataOnJava(passwordDb, PRIVATEKEY);
+        // if (!passwordIn.equals(decryPasswordDb)) {
+        //     return "登录失败";
+        // }
+
+        // md5方案
+        if (!PasswordEncoder.validPassword(passwordIn, passwordDb)) {
             return "登录失败";
         }
+
         // 认证成功，删除 session中的私钥
         session.removeAttribute("privateKey");
         return "登录成功";
@@ -102,12 +115,13 @@ public class LoginAndRegisterController {
     @ResponseBody
     public String register(@NotBlank String username, @NotBlank String password, HttpSession session){
         // 解决参数中的 +符号被过滤掉
-        try {
-            byte[] decode = Base64Utils.decode(password);
-            password = new String(decode, "UTF-8");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     byte[] decode = Base64Utils.decode(password);
+        //     password = new String(decode, "UTF-8");
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+
         // 用 session中的私钥解密
         String privateKey = (String) session.getAttribute("privateKey");
         if (StringUtils.isEmpty(privateKey)) {
@@ -115,8 +129,14 @@ public class LoginAndRegisterController {
         }
         // 解密为原密码
         String passwordIn = RSAUtils.decryptDataOnJava(password, privateKey);
+
+        // rsa方案
         // 根据后端的公钥加密（每次加密的结果都是不同的）
-        String passwordInEncrypt = RSAUtils.encryptedDataOnJava(passwordIn, PUBLICKEY);
+        // String passwordInEncrypt = RSAUtils.encryptedDataOnJava(passwordIn, PUBLICKEY);
+
+        // md5方案
+        String passwordInEncrypt = PasswordEncoder.getEncryptedPwd(passwordIn);
+
         // 入库
         User user = new User();
         user.setPassword(passwordInEncrypt);
